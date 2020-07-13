@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ベイズ推定器</title>
+<link rel="stylesheet" type="text/css" href="css/html5reset.css"  />
+</head>
+
+<script>
+
+function reWrite0(v,x) {
+  if (document.getElementById) {
+    if (document.getElementById(v)) document.getElementById(v).textContent = x;
+  }
+}
+
+function reWrite(v, x) {
+  reWrite0(v, x);
+  reWrite0(v+"1", x);
+  reWrite0(v+"2", x);
+  reWrite0(v+"3", x);
+  reWrite0(v+"4", x);
+  reWrite0(v+"5", x);
+  reWrite0(v+"6", x);
+  reWrite0(v+"7", x);
+  reWrite0(v+"8", x);
+  reWrite0(v+"-1", x);
+}
+
+function reWriteMultiple(v, x) {
+  reWrite(v,x.value);
+}
+
+function update(v,x) {
+  if (document.getElementById) {
+    document.getElementById(v).textContent = x.value + "%";
+    compute();
+  }
+}
+
+// 3桁ずつコンマで区切る関数。
+// Source: http://qiita.com/zawascript/items/922b5db574ef2b126069
+function separate(num){
+    return String(num).replace( /(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
+}
+
+function compute() {
+  if (document.getElementById) {
+    var p = document.form.Prior.value / 100.0;
+    var yonx = document.form.YonX.value / 100.0;
+    var yonnotx = document.form.YonNotX.value / 100.0;
+    var post = (p * yonx) / ( p * yonx + (1-p) * yonnotx ) ;
+    reWrite("Posterior", ((post * 100)+"").substring(0,4) + "%");
+    reWrite("X10000", separate(document.form.Prior.value * 100));
+    reWrite("NotX10000", separate((100 - document.form.Prior.value) * 100));
+    reWrite("XandY10000", separate(document.form.Prior.value * document.form.YonX.value));
+    reWrite("XandNotY10000", separate(document.form.Prior.value * (100 - document.form.YonX.value)));
+    reWrite("NotXandY10000", separate(document.form.YonNotX.value * (100 - document.form.Prior.value)));
+    reWrite("NotXandNotY10000", separate((100 - document.form.YonNotX.value) * (100 - document.form.Prior.value)));
+    reWrite("Y10000", separate(document.form.Prior.value * document.form.YonX.value + document.form.YonNotX.value * (100 - document.form.Prior.value)));
+    reWrite("NotY10000", separate(document.form.Prior.value * (100 - document.form.YonX.value) + (100 - document.form.YonNotX.value) * (100 - document.form.Prior.value)));
+  }
+}
+
+
+</script>
+
+
+<body>
+
+
+<h1>簡易ベイズ推定器</h1>
+
+<a href="BayesCalculator-e.html">English version here.</a>
+
+<h2>1. 知りたい事柄と証拠を入れてください</h2>
+
+<form name="form">
+知りたい事柄（例：「宇宙人が存在」、「私は新型肺炎」）:<br/>
+　<input type="text" name="X" size="20" onchange="reWriteMultiple(&quot;X&quot;,X); ">である確率：　<b id="Posterior">??</b> <font color="red"><b> ⇐ 計算結果はここに出ます</b></font><br/>
+わかっている証拠（例：「私はUFOを見た」、「PCR検査結果が陽性」）:<br/>
+　<input type="text" name="Y" size="20" onchange="reWriteMultiple(&quot;Y&quot;,Y); "> <br/>
+
+<hr/>
+<h2>2. 以下の3つのパラメターを指定してください</h2>
+事前確率: <br/>
+　<b>証拠が無い</b>としたら、「<font color="blue" id="X1"> X </font>」である確率はどれくらいですか？ <input type="range" name="Prior" onchange="update(&quot;Prior&quot;,this);"/> <b id="Prior">スライダーを動かして、設定してください</b><br/>
+証拠の正確性: <br/>
+　「<font color="blue" id="X2">X</font>」としたなら、「<font id="Y1" color="green">Y</font>」となる確率はどれくらいですか？ <input type="range" name="YonX" onchange="update(&quot;YonX&quot;,this);"/> <b id="YonX">スライダーを動かして、設定してください</b><br/>
+　「<font color="blue" id="X3">X</font>」で<b>ない</b>としたなら、「<font id="Y2" color="green">Y</font>」となる確率はどれくらいですか？ <input type="range" name="YonNotX" onchange="update(&quot;YonNotX&quot;,this);"/> <b id="YonNotX">スライダーを動かして、設定してください</b><br/>
+
+</form>
+
+<p></p>
+<hr/>
+<h2>3. なぜそうなるのか</h2> 
+
+<p>全部で10,000件のデータがあると考えてください。その結果、「<font color="blue" id="X4"> X </font>」である時と、
+ない時にそれぞれ証拠「<font id="Y4" color="green">Y</font>」が成り立つ場合、
+成り立たない場合の件数は以下の表のようになります。</p>
+
+<p>この表の作り方ですが、まず、証拠が無い場合の確率から、一番右側の列の件数を算出します。<br/>
+次に、「<font color="blue" id="X8"> X </font>」である場合とそうでない場合のそれぞれの行に対して、
+証拠の正確性の確率によって、証拠が成り立つ件数を算出します。</p>
+
+<table border="1" cellspacing="0" cellpadding="5">
+<tr>
+  <th></th>
+  <th><font id="Y5" color="green">Y</font></th>
+  <th>「<font id="Y6" color="green">Y</font>」でない</th>
+  <th>合計</th>
+</tr>
+<tr>
+  <td><font color="blue" id="X5"> X </font></td>
+  <td align="right" bgcolor="yellow"><b id="XandY10000"></b></td>
+  <td align="right"><b id="XandNotY10000"></b></td>
+  <td align="right"><b id="X10000"></b></td>
+</tr>
+<tr>
+  <td>「<font color="blue" id="X6"> X </font>」でない</td>
+  <td align="right" bgcolor="yellow"><b id="NotXandY10000"></b></td>
+  <td align="right"><b id="NotXandNotY10000"></b></td>
+  <td align="right"><b id="NotX10000"></b></td>
+</tr>
+<tr>
+  <td>合計</th>
+  <td align="right" bgcolor="yellow"><b id="Y10000"></b></td>
+  <td align="right"><b id="NotY10000"></b></td>
+  <td align="right"><b>10,000</b></td>
+</table>
+
+<p>このうち、求めたいのは、証拠として「<font id="Y7" color="green">Y</font>」が得られている件数のうち、
+「<font color="blue" id="X7"> X </font>」が成り立つものの件数です。表の黄色の列を見てください。<br/>
+求めたい確率は、<b id="XandY10000-1"></b> / <b id="Y10000-1"></b> = <b id="Posterior-1">??</b> です。</p>
+
+ 
+</body>
+</html>
